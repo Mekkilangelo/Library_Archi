@@ -20,7 +20,7 @@
     "express",
     "nodejs"
   ],
-  "author": "ESGI - Architecture Logicielle",
+  "author": "ESGI - M1 AL_IABD",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",

@@ -768,32 +768,3 @@ window.onclick = function(event) {
         event.target.classList.remove('active');
     }
 }
-
-// Return Book
-async function returnBook(requestId) {
-    if (!confirm('Confirmer le retour de ce livre ?')) return;
-    
-    try {
-        const res = await fetch(`${API}/library/return/${requestId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-user-id': currentUser.id,
-                'x-user-role': currentUser.role
-            }
-        });
-        
-        const data = await res.json();
-        alert(data.success ? '✅ ' + data.message : '❌ ' + data.error);
-        if (data.success) loadMyBorrowings();
-    } catch (error) {
-        alert('❌ Erreur lors du retour');
-    }
-}
-
-// Close modals on click outside
-window.onclick = function(event) {
-    if (event.target.classList.contains('modal')) {
-        event.target.classList.remove('active');
-    }
-}

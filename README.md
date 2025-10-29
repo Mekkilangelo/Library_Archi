@@ -122,10 +122,6 @@ await libraryFacade.requestBook(userId, bookId);
 // Vérifie l'utilisateur, le livre, la disponibilité, crée l'emprunt
 ```
 
-**Points clés** :
-- Interface simplifiée
-- Orchestration de plusieurs services
-- Logique métier complexe cachée
 
 ## 📦 Installation
 
@@ -167,38 +163,6 @@ Ou en mode développement (avec nodemon) :
 npm run dev
 ```
 
-Le serveur démarrera sur `http://localhost:3000`
-
-## 🔑 Configuration des Rôles (Mode Test)
-
-Pour tester différents rôles, modifiez le middleware d'authentification dans `app.js` (ligne 60) :
-
-```javascript
-// Tester comme Member (par défaut)
-req.user = {
-  id: 'user_member_001',
-  email: 'member@library.com',
-  name: 'Jean Dupont',
-  role: 'Member'
-};
-
-// Ou comme Librarian
-req.user = {
-  id: 'user_librarian_001',
-  email: 'librarian@library.com',
-  name: 'Marie Martin',
-  role: 'Librarian'
-};
-
-// Ou comme Admin
-req.user = {
-  id: 'user_admin_001',
-  email: 'admin@library.com',
-  name: 'Pierre Admin',
-  role: 'Admin'
-};
-```
-
 ## 🌐 Endpoints API
 
 ### Authentification (`/api/auth`)
@@ -231,51 +195,6 @@ req.user = {
 | POST | `/api/library/return` | Retourner un livre | Member/Librarian |
 | GET | `/api/library/my-borrowings` | Mon historique | Member |
 
-## 📝 Exemples d'utilisation
-
-### 1. Ajouter un livre (Librarian/Admin)
-
-```bash
-curl -X POST http://localhost:3000/api/books \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Le Petit Prince",
-    "author": "Antoine de Saint-Exupéry",
-    "genre": "Fiction",
-    "coverImageUrl": "https://example.com/cover.jpg"
-  }'
-```
-
-### 2. Demander un emprunt (Member)
-
-```bash
-curl -X POST http://localhost:3000/api/library/request \
-  -H "Content-Type: application/json" \
-  -d '{
-    "bookId": "book_12345"
-  }'
-```
-
-### 3. Approuver une demande (Librarian)
-
-```bash
-curl -X POST http://localhost:3000/api/library/review \
-  -H "Content-Type: application/json" \
-  -d '{
-    "requestId": "request_12345",
-    "action": "approve"
-  }'
-```
-
-### 4. Retourner un livre
-
-```bash
-curl -X POST http://localhost:3000/api/library/return \
-  -H "Content-Type: application/json" \
-  -d '{
-    "borrowingId": "borrowing_12345"
-  }'
-```
 
 ## 🎓 Flux de Demande d'Emprunt
 
@@ -316,7 +235,7 @@ LibraryFacade.returnBook()
 | Demander emprunt | ✅ | ✅ | ✅ |
 | Ajouter livre | ❌ | ✅ | ✅ |
 | Modifier livre | ❌ | ✅ | ✅ |
-| Supprimer livre | ❌ | ❌ | ✅ |
+| Supprimer livre | ❌ | ✅ | ✅ |
 | Approuver/Rejeter | ❌ | ✅ | ✅ |
 | Gérer utilisateurs | ❌ | ❌ | ✅ |
 
@@ -332,36 +251,14 @@ Pour tester les différents patterns :
 ## 📚 Technologies Utilisées
 
 - **Node.js** : Environnement d'exécution JavaScript
-- **Express.js** : Framework web minimaliste
+- **Express.js** : Framework web 
 - **Firebase Admin SDK** : Authentification et base de données
 - **Firestore** : Base de données NoSQL
 - **JavaScript (ES6+)** : Langage de programmation
 
-## 🤝 Contribution
 
-Ce projet est à but pédagogique. Les contributions sont les bienvenues pour :
-- Améliorer la documentation
-- Ajouter des tests unitaires
-- Corriger des bugs
-- Proposer de nouvelles fonctionnalités
+## 👨‍💻 Auteurs
 
-## 📄 Licence
+ESGI - Youenn COUESNON | Lucas MARTIN | Vassily DA SILVA | Mekki ABDESSATAR 
 
-MIT License - Libre d'utilisation à des fins éducatives
 
-## 👨‍💻 Auteur
-
-ESGI - Architecture Logicielle
-
-## 📞 Support
-
-Pour toute question ou problème :
-- Ouvrez une issue sur le dépôt
-- Consultez la documentation Firebase
-- Référez-vous aux commentaires dans le code
-
----
-
-**Note importante** : Ce projet utilise un middleware d'authentification simulée. Dans un environnement de production, utilisez Firebase Authentication avec JWT tokens pour sécuriser l'API.
-
-🎉 **Bon développement !**

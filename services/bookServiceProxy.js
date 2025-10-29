@@ -97,7 +97,7 @@ class BookServiceProxy {
    * @param {string} bookId - ID du livre à supprimer
    * @param {Object} user - Utilisateur qui effectue l'action
    * @returns {Promise<void>}
-   * @throws {Error} Si l'utilisateur n'a pas les permissions
+   * @throws {Error} Si l'utilisateur n'a pas les permissions ou si le livre est emprunté
    */
   async deleteBook(bookId, user) {
     // Admin et Librarian peuvent supprimer
@@ -107,6 +107,19 @@ class BookServiceProxy {
     }
 
     console.log(`✓ Autorisation accordée pour la suppression du livre ${bookId} par ${user.email} (${user.role})`);
+    
+    // Vérifier que le livre existe et n'est pas emprunté
+    const book = await this.realBookService.findBookById(bookId);
+    if (!book) {
+      throw new Error(`Livre ${bookId} non trouvé`);
+    }
+    
+    if (!book.isAvailable) {
+      console.warn(`Tentative de suppression du livre "${book.title}" qui est actuellement emprunté`);
+      throw new Error(`Impossible de supprimer le livre "${book.title}" : il est actuellement emprunté`);
+    }
+    
+    console.log(`✓ Livre "${book.title}" disponible, suppression autorisée`);
     
     // Déléguer au vrai service
     return await this.realBookService.deleteBook(bookId);

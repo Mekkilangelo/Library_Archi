@@ -12,7 +12,6 @@
 const userService = require('../services/userService');
 const borrowingService = require('../services/borrowingService');
 const bookServiceProxy = require('../services/bookServiceProxy');
-const bookService = require('../services/bookService'); // Service direct sans proxy
 
 class LibraryFacade {
   /**
@@ -191,70 +190,6 @@ class LibraryFacade {
   }
 
   /**
-   * @description Orchestre l'action "retourner un livre"
-   * Cette méthode coordonne plusieurs étapes:
-   * 1. Récupérer la demande d'emprunt
-   * 2. Vérifier que le statut est 'approved'
-   * 3. Marquer l'emprunt comme retourné
-   * 4. Mettre à jour le livre comme disponible
-   * 
-   * @param {string} borrowingId - ID de l'emprunt à retourner
-   * @returns {Promise<Object>} Résultat du retour avec les détails
-   * @throws {Error} Si la demande n'existe pas ou n'est pas dans le bon état
-   */
-  async returnBook(borrowingId) {
-    try {
-      console.log(`📖 Facade: Traitement du retour de livre - Borrowing: ${borrowingId}`);
-
-      // ÉTAPE 1: Récupérer la demande d'emprunt
-      const request = await borrowingService.findRequestById(borrowingId);
-      if (!request) {
-        throw new Error(`Emprunt ${borrowingId} non trouvé`);
-      }
-      console.log(`  ✓ Emprunt trouvé (statut: ${request.status})`);
-
-      // ÉTAPE 2: Vérifier que l'emprunt a été approuvé
-      if (request.status !== 'approved') {
-        throw new Error(`Cet emprunt ne peut pas être retourné (statut: ${request.status})`);
-      }
-
-      // ÉTAPE 3: Récupérer les informations du livre
-      const book = await bookServiceProxy.findBookById(request.bookId);
-      if (!book) {
-        throw new Error(`Livre ${request.bookId} non trouvé`);
-      }
-      console.log(`  ✓ Livre trouvé: "${book.title}"`);
-
-      // ÉTAPE 4: Marquer l'emprunt comme retourné
-      await borrowingService.markAsReturned(borrowingId);
-      console.log(`  ✓ Emprunt marqué comme retourné`);
-
-      // ÉTAPE 5: Mettre le livre à jour comme disponible
-      // Note: On utilise un utilisateur admin fictif pour contourner le proxy
-      const adminUser = { role: 'Admin', email: 'system@library.com', name: 'System' };
-      await bookServiceProxy.updateBook(request.bookId, { isAvailable: true }, adminUser);
-      console.log(`  ✓ Livre marqué comme disponible`);
-
-      // Vérifier si le retour est en retard
-      const isLate = request.dueDate && Date.now() > request.dueDate;
-      const lateMessage = isLate ? ' (RETOUR EN RETARD)' : '';
-
-      return {
-        success: true,
-        borrowingId: borrowingId,
-        bookTitle: book.title,
-        returnDate: new Date().toLocaleDateString(),
-        isLate: isLate,
-        message: `Livre "${book.title}" retourné avec succès${lateMessage}`
-      };
-
-    } catch (error) {
-      console.error(`✗ Erreur lors du retour du livre:`, error.message);
-      throw error;
-    }
-  }
-
-  /**
    * @description Récupère toutes les demandes en attente (utilitaire)
    * @returns {Promise<Array>} Liste des demandes en attente avec les détails
    */
@@ -391,9 +326,10 @@ class LibraryFacade {
       console.log(`  ✓ Demande marquée comme retournée${isLate ? ' (EN RETARD)' : ''}`);
 
       // ÉTAPE 5: Remettre le livre comme disponible
-      // Utilisation directe de bookService (sans proxy) car un Member peut retourner son propre livre
+      // Utilisation du proxy avec un utilisateur système (opération automatique de retour)
+      const systemUser = { role: 'Admin', email: 'system@library.com', name: 'System' };
       console.log(`  → Mise à jour du livre ${request.bookId} - isAvailable: true`);
-      const updatedBook = await bookService.updateBook(request.bookId, { isAvailable: true });
+      const updatedBook = await bookServiceProxy.updateBook(request.bookId, { isAvailable: true }, systemUser);
       console.log(`  ✓ Livre "${book.title}" marqué comme disponible (isAvailable: ${updatedBook.isAvailable})`);
 
       return {
