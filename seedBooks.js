@@ -11,6 +11,8 @@ const books = [
     author: 'Antoine de Saint-Exupéry',
     genre: 'Fiction',
     coverImageUrl: 'https://images-na.ssl-images-amazon.com/images/I/71OZY035FKL.jpg',
+    totalQuantity: 3,
+    availableQuantity: 3,
     isAvailable: true
   },
   {
@@ -18,6 +20,8 @@ const books = [
     author: 'J.K. Rowling',
     genre: 'Fantastique',
     coverImageUrl: 'https://m.media-amazon.com/images/I/81YOuOGFCJL.jpg',
+    totalQuantity: 5,
+    availableQuantity: 5,
     isAvailable: true
   },
   {
@@ -25,6 +29,8 @@ const books = [
     author: 'George Orwell',
     genre: 'Science-Fiction',
     coverImageUrl: 'https://m.media-amazon.com/images/I/71kxa1-0mfL.jpg',
+    totalQuantity: 2,
+    availableQuantity: 2,
     isAvailable: true
   },
   {
@@ -32,6 +38,8 @@ const books = [
     author: 'Albert Camus',
     genre: 'Fiction',
     coverImageUrl: 'https://m.media-amazon.com/images/I/71p3SxF+jfL.jpg',
+    totalQuantity: 1,
+    availableQuantity: 1,
     isAvailable: true
   },
   {
@@ -39,6 +47,8 @@ const books = [
     author: 'J.R.R. Tolkien',
     genre: 'Fantastique',
     coverImageUrl: 'https://m.media-amazon.com/images/I/91jBdIDc35L.jpg',
+    totalQuantity: 4,
+    availableQuantity: 4,
     isAvailable: true
   },
   {
@@ -46,6 +56,8 @@ const books = [
     author: 'Victor Hugo',
     genre: 'Histoire',
     coverImageUrl: 'https://m.media-amazon.com/images/I/81wH7kUxjPL.jpg',
+    totalQuantity: 2,
+    availableQuantity: 2,
     isAvailable: true
   },
   {
@@ -53,6 +65,8 @@ const books = [
     author: 'Isaac Asimov',
     genre: 'Science-Fiction',
     coverImageUrl: 'https://m.media-amazon.com/images/I/81fXDL60PSL.jpg',
+    totalQuantity: 3,
+    availableQuantity: 3,
     isAvailable: true
   },
   {
@@ -60,6 +74,8 @@ const books = [
     author: 'Jane Austen',
     genre: 'Romance',
     coverImageUrl: 'https://m.media-amazon.com/images/I/71Q1tPupKjL.jpg',
+    totalQuantity: 2,
+    availableQuantity: 2,
     isAvailable: true
   },
   {
@@ -67,6 +83,8 @@ const books = [
     author: 'Alexandre Dumas',
     genre: 'Aventure',
     coverImageUrl: 'https://m.media-amazon.com/images/I/81YH3jCWxfL.jpg',
+    totalQuantity: 3,
+    availableQuantity: 3,
     isAvailable: true
   },
   {
@@ -74,6 +92,8 @@ const books = [
     author: 'Paulo Coelho',
     genre: 'Fiction',
     coverImageUrl: 'https://m.media-amazon.com/images/I/71aFt4+OTOL.jpg',
+    totalQuantity: 6,
+    availableQuantity: 6,
     isAvailable: true
   }
 ];

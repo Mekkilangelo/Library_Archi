@@ -46,10 +46,10 @@ class LibraryFacade {
       console.log(`  ✓ Livre trouvé: "${book.title}" par ${book.author}`);
 
       // ÉTAPE 3: Vérifier que le livre est disponible
-      if (!book.isAvailable) {
-        throw new Error(`Le livre "${book.title}" n'est pas disponible actuellement`);
+      if (book.availableQuantity <= 0) {
+        throw new Error(`Le livre "${book.title}" n'est plus disponible (0/${book.totalQuantity} disponible)`);
       }
-      console.log(`  ✓ Livre disponible`);
+      console.log(`  ✓ Livre disponible (${book.availableQuantity}/${book.totalQuantity})`);
 
       // ÉTAPE 4: Vérifier que l'utilisateur n'a pas déjà une demande en cours pour ce livre
       const hasPendingRequest = await borrowingService.hasPendingRequestForBook(userId, bookId);
@@ -139,10 +139,10 @@ class LibraryFacade {
           throw new Error(`Livre ${request.bookId} non trouvé`);
         }
 
-        if (!book.isAvailable) {
-          throw new Error(`Le livre "${book.title}" vient d'être emprunté par quelqu'un d'autre`);
+        if (book.availableQuantity <= 0) {
+          throw new Error(`Le livre "${book.title}" n'est plus disponible (0/${book.totalQuantity})`);
         }
-        console.log(`  ✓ Livre "${book.title}" disponible`);
+        console.log(`  ✓ Livre "${book.title}" disponible (${book.availableQuantity}/${book.totalQuantity})`);
 
         // ÉTAPE 3b: Calculer la date de retour
         const approvalDate = Date.now();
@@ -166,9 +166,13 @@ class LibraryFacade {
         });
         console.log(`  ✓ Demande approuvée (date de retour: ${new Date(dueDate).toLocaleDateString()})`);
 
-        // ÉTAPE 3c: Mettre à jour le statut du livre (non disponible)
-        await bookServiceProxy.updateBook(request.bookId, { isAvailable: false }, librarianUser);
-        console.log(`  ✓ Livre marqué comme non disponible`);
+        // ÉTAPE 3c: Décrémenter la quantité disponible
+        const newAvailableQuantity = book.availableQuantity - 1;
+        await bookServiceProxy.updateBook(request.bookId, { 
+          availableQuantity: newAvailableQuantity,
+          isAvailable: newAvailableQuantity > 0 // Pour compatibilité
+        }, librarianUser);
+        console.log(`  ✓ Quantité disponible mise à jour: ${newAvailableQuantity}/${book.totalQuantity}`);
 
         return {
           success: true,
@@ -176,7 +180,8 @@ class LibraryFacade {
           requestId: requestId,
           bookTitle: book.title,
           dueDate: new Date(dueDate).toLocaleDateString(),
-          message: `Emprunt approuvé. Retour prévu le ${new Date(dueDate).toLocaleDateString()}`
+          availableQuantity: newAvailableQuantity,
+          message: `Emprunt approuvé. Retour prévu le ${new Date(dueDate).toLocaleDateString()}. Restant: ${newAvailableQuantity}/${book.totalQuantity}`
         };
 
       } else {
@@ -325,12 +330,16 @@ class LibraryFacade {
       });
       console.log(`  ✓ Demande marquée comme retournée${isLate ? ' (EN RETARD)' : ''}`);
 
-      // ÉTAPE 5: Remettre le livre comme disponible
+      // ÉTAPE 5: Incrémenter la quantité disponible
       // Utilisation du proxy avec un utilisateur système (opération automatique de retour)
       const systemUser = { role: 'Admin', email: 'system@library.com', name: 'System' };
-      console.log(`  → Mise à jour du livre ${request.bookId} - isAvailable: true`);
-      const updatedBook = await bookServiceProxy.updateBook(request.bookId, { isAvailable: true }, systemUser);
-      console.log(`  ✓ Livre "${book.title}" marqué comme disponible (isAvailable: ${updatedBook.isAvailable})`);
+      const newAvailableQuantity = book.availableQuantity + 1;
+      console.log(`  → Mise à jour du livre ${request.bookId} - availableQuantity: ${newAvailableQuantity}`);
+      const updatedBook = await bookServiceProxy.updateBook(request.bookId, { 
+        availableQuantity: newAvailableQuantity,
+        isAvailable: true // Toujours true après un retour
+      }, systemUser);
+      console.log(`  ✓ Livre "${book.title}" disponible (${newAvailableQuantity}/${book.totalQuantity})`);
 
       return {
         success: true,
@@ -338,9 +347,11 @@ class LibraryFacade {
         bookTitle: book.title,
         returnDate: new Date(returnDate).toLocaleDateString(),
         wasLate: isLate,
+        availableQuantity: newAvailableQuantity,
+        totalQuantity: book.totalQuantity,
         message: isLate ? 
-          `Livre "${book.title}" retourné (en retard)` : 
-          `Livre "${book.title}" retourné avec succès`
+          `Livre "${book.title}" retourné (en retard). Disponible: ${newAvailableQuantity}/${book.totalQuantity}` : 
+          `Livre "${book.title}" retourné avec succès. Disponible: ${newAvailableQuantity}/${book.totalQuantity}`
       };
     } catch (error) {
       console.error('✗ Erreur lors du retour du livre:', error.message);

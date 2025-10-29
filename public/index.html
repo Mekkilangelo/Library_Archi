@@ -182,6 +182,10 @@
                                 <label>URL Couverture</label>
                                 <input type="url" id="bookCover" placeholder="https://...">
                             </div>
+                            <div class="form-field">
+                                <label>Quantité totale</label>
+                                <input type="number" id="bookQuantity" min="1" value="1" required>
+                            </div>
                         </div>
                         <button type="submit" class="btn-primary">➕ Ajouter le livre</button>
                     </form>
@@ -239,6 +243,10 @@
                         <div class="form-field">
                             <label>URL Couverture</label>
                             <input type="url" id="editBookCover">
+                        </div>
+                        <div class="form-field">
+                            <label>Quantité totale</label>
+                            <input type="number" id="editBookQuantity" min="1" required>
                         </div>
                     </div>
                     <button type="submit" class="btn-primary">💾 Enregistrer</button>

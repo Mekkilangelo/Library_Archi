@@ -12,9 +12,10 @@ class Book {
    * @param {string} author - Auteur du livre
    * @param {string} genre - Genre littéraire du livre
    * @param {string} coverImageUrl - URL de l'image de couverture du livre
-   * @param {boolean} isAvailable - Statut de disponibilité du livre (par défaut true)
+   * @param {number} totalQuantity - Nombre total d'exemplaires (par défaut 1)
+   * @param {number} availableQuantity - Nombre d'exemplaires disponibles (par défaut = totalQuantity)
    */
-  constructor(id, title, author, genre, coverImageUrl, isAvailable = true) {
+  constructor(id, title, author, genre, coverImageUrl, totalQuantity = 1, availableQuantity = null) {
     this.id = id;
     this.title = title;
     this.author = author;
@@ -26,23 +27,44 @@ class Book {
     this.coverImageUrl = coverImageUrl;
     
     /**
-     * @property {boolean} isAvailable - Indique si le livre est disponible pour l'emprunt
+     * @property {number} totalQuantity - Nombre total d'exemplaires du livre
      */
-    this.isAvailable = isAvailable;
+    this.totalQuantity = totalQuantity;
+    
+    /**
+     * @property {number} availableQuantity - Nombre d'exemplaires actuellement disponibles
+     */
+    this.availableQuantity = availableQuantity !== null ? availableQuantity : totalQuantity;
+    
+    /**
+     * @property {boolean} isAvailable - DEPRECATED: Calculé dynamiquement, gardé pour compatibilité
+     * @deprecated Utilisez availableQuantity > 0 à la place
+     */
+    this.isAvailable = this.availableQuantity > 0;
   }
 
   /**
-   * @description Marque le livre comme emprunté (non disponible)
+   * @description Décrémente la quantité disponible (emprunt)
+   * @throws {Error} Si aucun exemplaire n'est disponible
    */
   markAsBorrowed() {
-    this.isAvailable = false;
+    if (this.availableQuantity <= 0) {
+      throw new Error(`Aucun exemplaire de "${this.title}" n'est disponible`);
+    }
+    this.availableQuantity--;
+    this.isAvailable = this.availableQuantity > 0;
   }
 
   /**
-   * @description Marque le livre comme retourné (disponible)
+   * @description Incrémente la quantité disponible (retour)
+   * @throws {Error} Si on essaie de retourner plus que la quantité totale
    */
   markAsAvailable() {
-    this.isAvailable = true;
+    if (this.availableQuantity >= this.totalQuantity) {
+      throw new Error(`Impossible de retourner: tous les exemplaires de "${this.title}" sont déjà disponibles`);
+    }
+    this.availableQuantity++;
+    this.isAvailable = this.availableQuantity > 0;
   }
 
   /**
@@ -50,8 +72,7 @@ class Book {
    * @returns {string} Représentation du livre
    */
   toString() {
-    const status = this.isAvailable ? 'Disponible' : 'Emprunté';
-    return `"${this.title}" par ${this.author} (${this.genre}) - ${status}`;
+    return `"${this.title}" par ${this.author} (${this.genre}) - ${this.availableQuantity}/${this.totalQuantity} disponible(s)`;
   }
 }
 

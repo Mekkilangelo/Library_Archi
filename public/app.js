@@ -180,7 +180,12 @@ function displayBooks(books) {
         return;
     }
     
-    list.innerHTML = books.map(book => `
+    list.innerHTML = books.map(book => {
+        const available = book.availableQuantity || 0;
+        const total = book.totalQuantity || 1;
+        const isAvailable = available > 0;
+        
+        return `
         <div class="book-card ${isAdmin ? 'admin' : ''}">
             <img src="${book.coverImageUrl || 'https://via.placeholder.com/240x280/6366f1/ffffff?text=' + encodeURIComponent(book.title)}" 
                  alt="${book.title}" 
@@ -190,8 +195,8 @@ function displayBooks(books) {
                 <p class="book-author">${book.author}</p>
                 <div class="book-meta">
                     <span class="book-genre">${book.genre}</span>
-                    <span class="book-status ${book.isAvailable ? 'status-available' : 'status-unavailable'}">
-                        ${book.isAvailable ? '✓ Disponible' : '✗ Emprunté'}
+                    <span class="book-status ${isAvailable ? 'status-available' : 'status-unavailable'}">
+                        ${available}/${total} disponible${available > 1 ? 's' : ''}
                     </span>
                 </div>
                 <div class="book-actions">
@@ -201,14 +206,15 @@ function displayBooks(books) {
                     ` : `
                         <button class="btn-borrow" 
                                 onclick="quickRequestBook('${book.id}')" 
-                                ${!book.isAvailable ? 'disabled' : ''}>
-                            ${book.isAvailable ? '📖 Emprunter' : '🔒 Indisponible'}
+                                ${!isAvailable ? 'disabled' : ''}>
+                            ${isAvailable ? '📖 Emprunter' : '🔒 Indisponible'}
                         </button>
                     `}
                 </div>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 // Filter Books
@@ -271,20 +277,26 @@ async function openRequestModal() {
 function displayBooksInModal(books) {
     const list = document.getElementById('bookSelectList');
     
-    list.innerHTML = books.map(book => `
-        <div class="book-select-item ${!book.isAvailable ? 'disabled' : ''}" 
-             onclick="selectBook('${book.id}', ${book.isAvailable})">
+    list.innerHTML = books.map(book => {
+        const available = book.availableQuantity || 0;
+        const total = book.totalQuantity || 1;
+        const isAvailable = available > 0;
+        
+        return `
+        <div class="book-select-item ${!isAvailable ? 'disabled' : ''}" 
+             onclick="selectBook('${book.id}', ${isAvailable})">
             <img src="${book.coverImageUrl || 'https://via.placeholder.com/60x80/6366f1/ffffff?text=Book'}" 
                  class="book-select-cover" alt="${book.title}">
             <div class="book-select-info">
                 <div class="book-select-title">${book.title}</div>
                 <div class="book-select-author">${book.author}</div>
             </div>
-            <span class="book-select-status ${book.isAvailable ? 'available' : 'unavailable'}">
-                ${book.isAvailable ? '✓ Disponible' : '✗ Indisponible'}
+            <span class="book-select-status ${isAvailable ? 'available' : 'unavailable'}">
+                ${available}/${total} dispo
             </span>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 // Filter Books in Modal
@@ -501,6 +513,7 @@ async function addBook() {
     const author = document.getElementById('bookAuthor').value;
     const genre = document.getElementById('bookGenre').value;
     const coverImageUrl = document.getElementById('bookCover').value;
+    const totalQuantity = parseInt(document.getElementById('bookQuantity').value) || 1;
     const resultDiv = document.getElementById('addBookResult');
     
     if (!title || !author || !genre) {
@@ -516,7 +529,7 @@ async function addBook() {
                 'x-user-id': currentUser.id,
                 'x-user-role': currentUser.role
             },
-            body: JSON.stringify({ title, author, genre, coverImageUrl })
+            body: JSON.stringify({ title, author, genre, coverImageUrl, totalQuantity })
         });
         
         const data = await res.json();
@@ -527,6 +540,7 @@ async function addBook() {
             document.getElementById('bookAuthor').value = '';
             document.getElementById('bookGenre').value = '';
             document.getElementById('bookCover').value = '';
+            document.getElementById('bookQuantity').value = '1';
             
             setTimeout(() => resultDiv.innerHTML = '', 3000);
         } else {
@@ -547,6 +561,7 @@ async function openEditModal(bookId) {
     document.getElementById('editBookAuthor').value = book.author;
     document.getElementById('editBookGenre').value = book.genre;
     document.getElementById('editBookCover').value = book.coverImageUrl || '';
+    document.getElementById('editBookQuantity').value = book.totalQuantity || 1;
     
     document.getElementById('editModal').classList.add('active');
 }
@@ -563,6 +578,7 @@ async function updateBook() {
     const author = document.getElementById('editBookAuthor').value;
     const genre = document.getElementById('editBookGenre').value;
     const coverImageUrl = document.getElementById('editBookCover').value;
+    const totalQuantity = parseInt(document.getElementById('editBookQuantity').value) || 1;
     
     try {
         const res = await fetch(`${API}/books/${bookId}`, {
@@ -572,7 +588,7 @@ async function updateBook() {
                 'x-user-id': currentUser.id,
                 'x-user-role': currentUser.role
             },
-            body: JSON.stringify({ title, author, genre, coverImageUrl })
+            body: JSON.stringify({ title, author, genre, coverImageUrl, totalQuantity })
         });
         
         const data = await res.json();

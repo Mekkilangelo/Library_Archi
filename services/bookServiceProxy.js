@@ -108,18 +108,19 @@ class BookServiceProxy {
 
     console.log(`✓ Autorisation accordée pour la suppression du livre ${bookId} par ${user.email} (${user.role})`);
     
-    // Vérifier que le livre existe et n'est pas emprunté
+    // Vérifier que le livre existe et que tous les exemplaires ne sont pas empruntés
     const book = await this.realBookService.findBookById(bookId);
     if (!book) {
       throw new Error(`Livre ${bookId} non trouvé`);
     }
     
-    if (!book.isAvailable) {
-      console.warn(`Tentative de suppression du livre "${book.title}" qui est actuellement emprunté`);
-      throw new Error(`Impossible de supprimer le livre "${book.title}" : il est actuellement emprunté`);
+    if (book.availableQuantity < book.totalQuantity) {
+      const borrowedCount = book.totalQuantity - book.availableQuantity;
+      console.warn(`Tentative de suppression du livre "${book.title}" alors que ${borrowedCount} exemplaire(s) sont emprunté(s)`);
+      throw new Error(`Impossible de supprimer le livre "${book.title}" : ${borrowedCount} exemplaire(s) emprunté(s) sur ${book.totalQuantity}`);
     }
     
-    console.log(`✓ Livre "${book.title}" disponible, suppression autorisée`);
+    console.log(`✓ Livre "${book.title}" - tous les exemplaires sont disponibles (${book.availableQuantity}/${book.totalQuantity}), suppression autorisée`);
     
     // Déléguer au vrai service
     return await this.realBookService.deleteBook(bookId);

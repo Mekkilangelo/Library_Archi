@@ -28,16 +28,21 @@ class BookService {
    * @param {string} bookData.author - Auteur du livre
    * @param {string} bookData.genre - Genre du livre
    * @param {string} bookData.coverImageUrl - URL de l'image de couverture
+   * @param {number} bookData.totalQuantity - Nombre total d'exemplaires (défaut: 1)
    * @returns {Promise<Book>} Le livre créé
    */
   async addBook(bookData) {
     try {
+      const totalQuantity = bookData.totalQuantity || 1;
+      
       const newBookData = {
         title: bookData.title,
         author: bookData.author,
         genre: bookData.genre,
         coverImageUrl: bookData.coverImageUrl || '',
-        isAvailable: true,
+        totalQuantity: totalQuantity,
+        availableQuantity: totalQuantity,
+        isAvailable: true, // Pour compatibilité
         createdAt: Date.now()
       };
 
@@ -49,7 +54,8 @@ class BookService {
         newBookData.author,
         newBookData.genre,
         newBookData.coverImageUrl,
-        newBookData.isAvailable
+        newBookData.totalQuantity,
+        newBookData.availableQuantity
       );
     } catch (error) {
       console.error('Erreur lors de l\'ajout du livre:', error);
@@ -103,7 +109,8 @@ class BookService {
         data.author,
         data.genre,
         data.coverImageUrl || '',
-        data.isAvailable !== false // Par défaut true
+        data.totalQuantity || 1,
+        data.availableQuantity !== undefined ? data.availableQuantity : (data.totalQuantity || 1)
       );
     } catch (error) {
       console.error(`Erreur lors de la recherche du livre ${bookId}:`, error);
@@ -149,7 +156,8 @@ class BookService {
           data.author,
           data.genre,
           data.coverImageUrl || '',
-          data.isAvailable !== false
+          data.totalQuantity || 1,
+          data.availableQuantity !== undefined ? data.availableQuantity : (data.totalQuantity || 1)
         ));
       });
 
@@ -177,7 +185,8 @@ class BookService {
           data.author,
           data.genre,
           data.coverImageUrl || '',
-          data.isAvailable !== false
+          data.totalQuantity || 1,
+          data.availableQuantity !== undefined ? data.availableQuantity : (data.totalQuantity || 1)
         ));
       });
 
