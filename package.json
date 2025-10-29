@@ -1,0 +1,36 @@
+{
+  "name": "library-management-system",
+  "version": "1.0.0",
+  "description": "Système de gestion de bibliothèque avec implémentation de design patterns (Singleton, Factory, Proxy, Facade)",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "library",
+    "management",
+    "design-patterns",
+    "singleton",
+    "factory",
+    "proxy",
+    "facade",
+    "firebase",
+    "express",
+    "nodejs"
+  ],
+  "author": "ESGI - Architecture Logicielle",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "firebase-admin": "^11.11.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  }
+}

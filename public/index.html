@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📚 Bibliothèque</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="loginPage">
+        <div class="login-container">
+            <div class="login-header">
+                <div class="logo">📚</div>
+                <h1>Bibliothèque</h1>
+                <p>Gérez vos emprunts en toute simplicité</p>
+            </div>
+            
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="showLoginTab()">Connexion</button>
+                <button class="auth-tab" onclick="showRegisterTab()">Inscription</button>
+            </div>
+            
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form">
+                <input type="email" id="loginEmail" placeholder="Email" required>
+                <input type="password" id="loginPassword" placeholder="Mot de passe" required>
+                <button type="submit">Se connecter</button>
+                <div id="loginError" class="error-msg"></div>
+            </form>
+            
+            <!-- Register Form -->
+            <form id="registerForm" class="auth-form hidden">
+                <input type="text" id="registerName" placeholder="Nom complet" required>
+                <input type="email" id="registerEmail" placeholder="Email" required>
+                <input type="password" id="registerPassword" placeholder="Mot de passe" required>
+                <button type="submit">S'inscrire</button>
+                <div id="registerError" class="error-msg"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="hidden">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="logo">📚</div>
+                <h2>Bibliothèque</h2>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <button class="menu-item active" data-tab="books">
+                    <span class="icon">📖</span>
+                    <span>Catalogue</span>
+                </button>
+                <button class="menu-item" onclick="openRequestModal()">
+                    <span class="icon">➕</span>
+                    <span>Emprunter</span>
+                </button>
+                <button class="menu-item" data-tab="myborrow">
+                    <span class="icon">📋</span>
+                    <span>Mes Emprunts</span>
+                </button>
+                <button class="menu-item librarian-only" data-tab="active-loans">
+                    <span class="icon">📚</span>
+                    <span>Emprunts Actifs</span>
+                    <span class="badge" id="activeLoansCount">0</span>
+                </button>
+                <button class="menu-item librarian-only" data-tab="pending">
+                    <span class="icon">⏳</span>
+                    <span>Demandes</span>
+                    <span class="badge" id="pendingCount">0</span>
+                </button>
+                <button class="menu-item librarian-only" data-tab="addbook">
+                    <span class="icon">➕</span>
+                    <span>Ajouter Livre</span>
+                </button>
+                <button class="menu-item admin-only" data-tab="users">
+                    <span class="icon">👥</span>
+                    <span>Utilisateurs</span>
+                </button>
+            </nav>
+            
+            <div class="sidebar-user">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div class="user-info">
+                    <div class="user-name" id="userName">User</div>
+                    <div class="user-role" id="userRole">Member</div>
+                </div>
+                <button class="btn-logout" onclick="logout()" title="Déconnexion">🚪</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Books Tab -->
+            <section id="books" class="content-section active">
+                <div class="section-header">
+                    <div>
+                        <h1>📖 Catalogue</h1>
+                        <p>Parcourez notre collection</p>
+                    </div>
+                    <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Rechercher..." onkeyup="filterBooks()">
+                </div>
+                <div id="booksList" class="books-grid">
+                    <div class="loader">Chargement...</div>
+                </div>
+            </section>
+
+            <!-- My Borrowings Tab -->
+            <section id="myborrow" class="content-section">
+                <div class="section-header">
+                    <h1>📋 Mes Emprunts</h1>
+                    <p>Suivez l'état de vos demandes</p>
+                </div>
+                <div id="myBorrowingsList" class="borrowings-list">
+                    <div class="loader">Chargement...</div>
+                </div>
+            </section>
+
+            <!-- Active Loans Tab (Librarian/Admin Only) -->
+            <section id="active-loans" class="content-section librarian-only">
+                <div class="section-header">
+                    <div>
+                        <h1>📚 Emprunts Actifs</h1>
+                        <p>Tous les livres actuellement empruntés</p>
+                    </div>
+                    <button class="btn-refresh" onclick="loadActiveLoans()">🔄 Actualiser</button>
+                </div>
+                <div id="activeLoansList" class="loans-list">
+                    <div class="loader">Chargement...</div>
+                </div>
+            </section>
+
+            <!-- Pending Requests Tab -->
+            <section id="pending" class="content-section librarian-only">
+                <div class="section-header">
+                    <div>
+                        <h1>⏳ Demandes en Attente</h1>
+                        <p>Gérez les demandes d'emprunt</p>
+                    </div>
+                    <button class="btn-refresh" onclick="loadPendingRequests()">🔄 Actualiser</button>
+                </div>
+                <div id="pendingList" class="requests-list">
+                    <div class="loader">Chargement...</div>
+                </div>
+            </section>
+
+            <!-- Add Book Tab -->
+            <section id="addbook" class="content-section librarian-only">
+                <div class="section-header">
+                    <h1>➕ Ajouter un Livre</h1>
+                    <p>Enrichissez le catalogue</p>
+                </div>
+                <div class="add-book-container">
+                    <form class="book-form" onsubmit="event.preventDefault(); addBook();">
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label>Titre</label>
+                                <input type="text" id="bookTitle" placeholder="ex: Le Petit Prince" required>
+                            </div>
+                            <div class="form-field">
+                                <label>Auteur</label>
+                                <input type="text" id="bookAuthor" placeholder="ex: Antoine de Saint-Exupéry" required>
+                            </div>
+                            <div class="form-field">
+                                <label>Genre</label>
+                                <select id="bookGenre" required>
+                                    <option value="">Sélectionner</option>
+                                    <option value="Roman">Roman</option>
+                                    <option value="Science-Fiction">Science-Fiction</option>
+                                    <option value="Fantasy">Fantasy</option>
+                                    <option value="Classique">Classique</option>
+                                    <option value="Conte">Conte</option>
+                                    <option value="Dystopie">Dystopie</option>
+                                    <option value="Aventure">Aventure</option>
+                                    <option value="Histoire">Histoire</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label>URL Couverture</label>
+                                <input type="url" id="bookCover" placeholder="https://...">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary">➕ Ajouter le livre</button>
+                    </form>
+                    <div id="addBookResult"></div>
+                </div>
+            </section>
+
+            <!-- Users Management Tab (Admin Only) -->
+            <section id="users" class="content-section admin-only">
+                <div class="section-header">
+                    <div>
+                        <h1>👥 Gestion des Utilisateurs</h1>
+                        <p>Gérez les rôles des membres</p>
+                    </div>
+                    <button class="btn-refresh" onclick="loadUsers()">🔄 Actualiser</button>
+                </div>
+                <div id="usersList" class="users-list">
+                    <div class="loader">Chargement...</div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Modal Edit Book -->
+        <div id="editModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>✏️ Modifier le livre</h2>
+                    <button class="modal-close" onclick="closeEditModal()">✕</button>
+                </div>
+                <form class="book-form" onsubmit="event.preventDefault(); updateBook();">
+                    <input type="hidden" id="editBookId">
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label>Titre</label>
+                            <input type="text" id="editBookTitle" required>
+                        </div>
+                        <div class="form-field">
+                            <label>Auteur</label>
+                            <input type="text" id="editBookAuthor" required>
+                        </div>
+                        <div class="form-field">
+                            <label>Genre</label>
+                            <select id="editBookGenre" required>
+                                <option value="">Sélectionner</option>
+                                <option value="Roman">Roman</option>
+                                <option value="Science-Fiction">Science-Fiction</option>
+                                <option value="Fantasy">Fantasy</option>
+                                <option value="Classique">Classique</option>
+                                <option value="Conte">Conte</option>
+                                <option value="Dystopie">Dystopie</option>
+                                <option value="Aventure">Aventure</option>
+                                <option value="Histoire">Histoire</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>URL Couverture</label>
+                            <input type="url" id="editBookCover">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary">💾 Enregistrer</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal Request Book -->
+        <div id="requestModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>📖 Emprunter un livre</h2>
+                    <button class="modal-close" onclick="closeRequestModal()">✕</button>
+                </div>
+                <input type="text" class="search-bar" placeholder="🔍 Rechercher..." onkeyup="filterBooksInModal()" style="width: 100%; margin-bottom: 16px;">
+                <div id="bookSelectList" class="book-select-list">
+                    <div class="loader">Chargement...</div>
+                </div>
+                <button class="btn-primary" onclick="confirmBookRequest()" style="margin-top: 16px;" id="confirmRequestBtn" disabled>
+                    Confirmer l'emprunt
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
