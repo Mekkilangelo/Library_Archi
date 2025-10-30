@@ -12,8 +12,39 @@
 const userService = require('../services/userService');
 const borrowingService = require('../services/borrowingService');
 const bookServiceProxy = require('../services/bookServiceProxy');
+const watchlistService = require('../services/watchlistService');
+
+// Observer Pattern
+const notificationSubject = require('../patterns/observer/notificationSubject');
+const NewRequestObserver = require('../patterns/observer/newRequestObserver');
+const BookAvailableObserver = require('../patterns/observer/bookAvailableObserver');
+const Notification = require('../models/notification');
 
 class LibraryFacade {
+  constructor() {
+    // Initialiser les observers une seule fois
+    if (!LibraryFacade.observersInitialized) {
+      this.initializeObservers();
+      LibraryFacade.observersInitialized = true;
+    }
+  }
+
+  /**
+   * Initialiser les observers du pattern Observer
+   */
+  initializeObservers() {
+    console.log('🔔 Initialisation des observers de notifications...');
+    
+    // Attacher NewRequestObserver pour notifier les bibliothécaires
+    const newRequestObserver = new NewRequestObserver();
+    notificationSubject.attach(Notification.Types.NEW_REQUEST, newRequestObserver);
+    
+    // Attacher BookAvailableObserver pour la watchlist
+    const bookAvailableObserver = new BookAvailableObserver();
+    notificationSubject.attach(Notification.Types.BOOK_AVAILABLE, bookAvailableObserver);
+    
+    console.log('✓ Observers initialisés');
+  }
   /**
    * @description Orchestre l'action "demander un livre"
    * Cette méthode coordonne plusieurs étapes:
@@ -61,6 +92,22 @@ class LibraryFacade {
       // ÉTAPE 5: Créer la demande d'emprunt
       const borrowingRequest = await borrowingService.createBorrowingRequest(userId, bookId);
       console.log(`  ✓ Demande d'emprunt créée avec succès (ID: ${borrowingRequest.id})`);
+
+      // ÉTAPE 6: Notifier les bibliothécaires (Observer Pattern)
+      try {
+        const librarians = await userService.findUsersByRole('Librarian');
+        await notificationSubject.notify(Notification.Types.NEW_REQUEST, {
+          requestId: borrowingRequest.id,
+          userId: user.id,
+          userName: user.name,
+          bookTitle: book.title,
+          bookId: book.id,
+          librarians: librarians
+        });
+      } catch (notifError) {
+        console.error('⚠️ Erreur notification bibliothécaires:', notifError.message);
+        // Ne pas bloquer la création de la demande si la notification échoue
+      }
 
       // Retourner la demande avec les informations du livre et de l'utilisateur
       return {
@@ -340,6 +387,24 @@ class LibraryFacade {
         isAvailable: true // Toujours true après un retour
       }, systemUser);
       console.log(`  ✓ Livre "${book.title}" disponible (${newAvailableQuantity}/${book.totalQuantity})`);
+
+      // ÉTAPE 6: Notifier les utilisateurs de la watchlist (Observer Pattern)
+      try {
+        const watchers = await watchlistService.getBookWatchers(request.bookId);
+        if (watchers.length > 0) {
+          await notificationSubject.notify(Notification.Types.BOOK_AVAILABLE, {
+            bookId: book.id,
+            bookTitle: book.title,
+            watchers: watchers
+          });
+          
+          // Nettoyer la watchlist après notification
+          await watchlistService.clearBookWatchers(request.bookId);
+        }
+      } catch (notifError) {
+        console.error('⚠️ Erreur notification watchlist:', notifError.message);
+        // Ne pas bloquer le retour si la notification échoue
+      }
 
       return {
         success: true,

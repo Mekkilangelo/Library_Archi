@@ -14,10 +14,14 @@
 const express = require('express');
 const app = express();
 
+// Import du job de vérification des échéances
+const dueDateCheckerJob = require('./jobs/dueDateCheckerJob');
+
 // Import des routes
 const authRoutes = require('./routes/authRoutes');
 const bookRoutes = require('./routes/bookRoutes');
 const libraryRoutes = require('./routes/libraryRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 // Configuration
 const PORT = process.env.PORT || 3000;
@@ -106,6 +110,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/books', bookRoutes);
 app.use('/api/library', libraryRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // ============================================================================
 // GESTION DES ERREURS
@@ -144,7 +149,10 @@ app.use((error, req, res, next) => {
  */
 app.listen(PORT, () => {
   console.log(`\n🏛️ Library System - http://localhost:${PORT}`);
-  console.log(`Patterns: Singleton | Factory | Proxy | Facade\n`);
+  console.log(`Patterns: Singleton | Factory | Proxy | Facade | Observer\n`);
+  
+  // Démarrer le job de vérification des échéances (toutes les 24h)
+  dueDateCheckerJob.start();
 });
 
 /**
@@ -152,11 +160,13 @@ app.listen(PORT, () => {
  */
 process.on('SIGTERM', () => {
   console.log('\n⚠️  SIGTERM reçu, arrêt du serveur...');
+  dueDateCheckerJob.stop();
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
   console.log('\n⚠️  SIGINT reçu, arrêt du serveur...');
+  dueDateCheckerJob.stop();
   process.exit(0);
 });
 

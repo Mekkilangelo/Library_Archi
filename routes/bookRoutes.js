@@ -7,6 +7,7 @@
 const express = require('express');
 const router = express.Router();
 const bookController = require('../controllers/bookController');
+const notificationController = require('../controllers/notificationController');
 
 /**
  * @route GET /api/books
@@ -49,6 +50,31 @@ router.put('/:id', bookController.updateBook);
  * @access Librarian, Admin uniquement
  */
 router.delete('/:id', bookController.deleteBook);
+
+/**
+ * WATCHLIST ROUTES
+ */
+
+/**
+ * @route POST /api/books/:id/watch
+ * @description Ajouter un livre à la watchlist (me notifier quand disponible)
+ * @access Member, Librarian, Admin
+ */
+router.post('/:id/watch', (req, res) => notificationController.addToWatchlist(req, res));
+
+/**
+ * @route DELETE /api/books/:id/watch
+ * @description Retirer un livre de la watchlist
+ * @access Member, Librarian, Admin
+ */
+router.delete('/:id/watch', (req, res) => notificationController.removeFromWatchlist(req, res));
+
+/**
+ * @route GET /api/books/:id/watching
+ * @description Vérifier si l'utilisateur surveille ce livre
+ * @access Member, Librarian, Admin
+ */
+router.get('/:id/watching', (req, res) => notificationController.isWatching(req, res));
 
 module.exports = router;
 

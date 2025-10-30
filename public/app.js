@@ -114,6 +114,7 @@ function showMainApp() {
     }
     
     loadBooks();
+    updateNotificationBadge(); // Charger le compteur de notifications
 }
 
 // Logout
@@ -146,6 +147,7 @@ function setupNavigation() {
             if (tab === 'pending') loadPendingRequests();
             if (tab === 'users') loadUsers();
             if (tab === 'active-loans') loadActiveLoans();
+            if (tab === 'notifications') loadNotifications();
         });
     });
 }
@@ -209,6 +211,13 @@ function displayBooks(books) {
                                 ${!isAvailable ? 'disabled' : ''}>
                             ${isAvailable ? '📖 Emprunter' : '🔒 Indisponible'}
                         </button>
+                        ${!isAvailable ? `
+                            <button class="btn-watch" 
+                                    onclick="addToWatchlist('${book.id}')" 
+                                    title="Me notifier quand disponible">
+                                🔔 Notifier
+                            </button>
+                        ` : ''}
                     `}
                 </div>
             </div>
@@ -284,16 +293,23 @@ function displayBooksInModal(books) {
         
         return `
         <div class="book-select-item ${!isAvailable ? 'disabled' : ''}" 
-             onclick="selectBook('${book.id}', ${isAvailable})">
+             ${isAvailable ? `onclick="selectBook('${book.id}', ${isAvailable})"` : ''}>
             <img src="${book.coverImageUrl || 'https://via.placeholder.com/60x80/6366f1/ffffff?text=Book'}" 
                  class="book-select-cover" alt="${book.title}">
             <div class="book-select-info">
                 <div class="book-select-title">${book.title}</div>
                 <div class="book-select-author">${book.author}</div>
+                <span class="book-select-status ${isAvailable ? 'available' : 'unavailable'}">
+                    ${available}/${total} dispo
+                </span>
             </div>
-            <span class="book-select-status ${isAvailable ? 'available' : 'unavailable'}">
-                ${available}/${total} dispo
-            </span>
+            ${!isAvailable ? `
+                <button class="btn-watch-small" 
+                        onclick="event.stopPropagation(); addToWatchlist('${book.id}'); closeRequestModal();" 
+                        title="Me notifier quand disponible">
+                    🔔 Notifier
+                </button>
+            ` : ''}
         </div>
     `;
     }).join('');
@@ -784,3 +800,234 @@ window.onclick = function(event) {
         event.target.classList.remove('active');
     }
 }
+
+// ============================================================================
+// NOTIFICATIONS
+// ============================================================================
+
+/**
+ * Charger les notifications de l'utilisateur
+ */
+async function loadNotifications() {
+    const list = document.getElementById('notificationsList');
+    if (!list) return;
+    
+    list.innerHTML = '<div class="loader">Chargement...</div>';
+    
+    try {
+        const res = await fetch(`${API}/notifications`, {
+            headers: {
+                'x-user-id': currentUser.id,
+                'x-user-role': currentUser.role
+            }
+        });
+        const data = await res.json();
+        
+        if (data.success && data.notifications.length > 0) {
+            list.innerHTML = data.notifications.map(notif => {
+                const date = new Date(notif.createdAt).toLocaleString('fr-FR');
+                const iconMap = {
+                    'NEW_REQUEST': '📬',
+                    'DUE_DATE_REMINDER': '⏰',
+                    'OVERDUE': '⚠️',
+                    'BOOK_AVAILABLE': '📖'
+                };
+                const icon = iconMap[notif.type] || '🔔';
+                
+                return `
+                    <div class="notification-item ${notif.read ? 'read' : 'unread'}" data-id="${notif.id}">
+                        <div class="notification-icon">${icon}</div>
+                        <div class="notification-content">
+                            <p class="notification-message">${notif.message}</p>
+                            <p class="notification-date">${date}</p>
+                        </div>
+                        <div class="notification-actions">
+                            ${!notif.read ? `<button class="btn-icon" onclick="markNotificationAsRead('${notif.id}')" title="Marquer comme lu">✓</button>` : ''}
+                            <button class="btn-icon" onclick="deleteNotification('${notif.id}')" title="Supprimer">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            list.innerHTML = '<div class="empty-state"><div class="icon">🔔</div><p>Aucune notification</p></div>';
+        }
+        
+        // Mettre à jour le badge
+        updateNotificationBadge();
+    } catch (error) {
+        console.error('Erreur chargement notifications:', error);
+        list.innerHTML = '<div class="empty-state"><div class="icon">❌</div><p>Erreur de chargement</p></div>';
+    }
+}
+
+/**
+ * Mettre à jour le badge de notifications non lues
+ */
+async function updateNotificationBadge() {
+    if (!currentUser || !currentUser.id) {
+        console.warn('updateNotificationBadge: currentUser non défini');
+        return;
+    }
+    
+    try {
+        const res = await fetch(`${API}/notifications/count`, {
+            headers: {
+                'x-user-id': currentUser.id,
+                'x-user-role': currentUser.role
+            }
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            const badge = document.getElementById('notificationsCount');
+            if (badge) {
+                badge.textContent = data.count;
+                badge.style.display = data.count > 0 ? 'flex' : 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Erreur comptage notifications:', error);
+    }
+}
+
+/**
+ * Marquer une notification comme lue
+ */
+async function markNotificationAsRead(notificationId) {
+    try {
+        const res = await fetch(`${API}/notifications/${notificationId}/read`, {
+            method: 'PUT',
+            headers: {
+                'x-user-id': currentUser.id,
+                'x-user-role': currentUser.role
+            }
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            loadNotifications(); // Recharger
+        }
+    } catch (error) {
+        console.error('Erreur marquage notification:', error);
+        alert('Erreur lors du marquage de la notification');
+    }
+}
+
+/**
+ * Marquer toutes les notifications comme lues
+ */
+async function markAllNotificationsAsRead() {
+    try {
+        const res = await fetch(`${API}/notifications/read-all`, {
+            method: 'PUT',
+            headers: {
+                'x-user-id': currentUser.id,
+                'x-user-role': currentUser.role
+            }
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            loadNotifications(); // Recharger
+            alert(data.message);
+        }
+    } catch (error) {
+        console.error('Erreur marquage toutes notifications:', error);
+        alert('Erreur lors du marquage des notifications');
+    }
+}
+
+/**
+ * Supprimer une notification
+ */
+async function deleteNotification(notificationId) {
+    if (!confirm('Supprimer cette notification ?')) return;
+    
+    try {
+        const res = await fetch(`${API}/notifications/${notificationId}`, {
+            method: 'DELETE',
+            headers: {
+                'x-user-id': currentUser.id,
+                'x-user-role': currentUser.role
+            }
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            loadNotifications(); // Recharger
+        }
+    } catch (error) {
+        console.error('Erreur suppression notification:', error);
+        alert('Erreur lors de la suppression de la notification');
+    }
+}
+
+/**
+ * Ajouter un livre à la watchlist (me notifier quand disponible)
+ */
+async function addToWatchlist(bookId) {
+    console.log('addToWatchlist - currentUser:', currentUser);
+    
+    if (!currentUser || !currentUser.id) {
+        alert('❌ Vous devez être connecté pour utiliser cette fonctionnalité');
+        console.error('addToWatchlist - currentUser invalide:', currentUser);
+        return;
+    }
+    
+    console.log('addToWatchlist - Envoi requête avec:', {
+        userId: currentUser.id,
+        userRole: currentUser.role,
+        bookId: bookId
+    });
+    
+    try {
+        const res = await fetch(`${API}/books/${bookId}/watch`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-user-id': currentUser.id,
+                'x-user-role': currentUser.role
+            }
+        });
+        const data = await res.json();
+        
+        console.log('addToWatchlist - Réponse:', data);
+        
+        if (data.success) {
+            alert(data.message);
+            loadBooks(); // Recharger pour mettre à jour les boutons
+        } else {
+            alert(data.error || 'Erreur lors de l\'ajout à la watchlist');
+        }
+    } catch (error) {
+        console.error('Erreur ajout watchlist:', error);
+        alert('Erreur lors de l\'ajout à la watchlist');
+    }
+}
+
+/**
+ * Retirer un livre de la watchlist
+ */
+async function removeFromWatchlist(bookId) {
+    try {
+        const res = await fetch(`${API}/books/${bookId}/watch`, {
+            method: 'DELETE',
+            headers: {
+                'x-user-id': currentUser.id,
+                'x-user-role': currentUser.role
+            }
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            alert(data.message);
+            loadBooks(); // Recharger pour mettre à jour les boutons
+        } else {
+            alert(data.error || 'Erreur lors du retrait de la watchlist');
+        }
+    } catch (error) {
+        console.error('Erreur retrait watchlist:', error);
+        alert('Erreur lors du retrait de la watchlist');
+    }
+}
+

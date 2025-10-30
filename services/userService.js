@@ -126,6 +126,33 @@ class UserService {
   }
 
   /**
+   * @description Récupère tous les utilisateurs ayant un rôle spécifique
+   * @param {string} role - Rôle à rechercher (Member, Librarian, Admin)
+   * @returns {Promise<User[]>} Liste des utilisateurs avec ce rôle
+   */
+  async findUsersByRole(role) {
+    try {
+      const querySnapshot = await this.db
+        .collection(this.COLLECTION_NAME)
+        .where('role', '==', role)
+        .get();
+      
+      const users = [];
+
+      querySnapshot.forEach(doc => {
+        const userData = { id: doc.id, ...doc.data() };
+        users.push(UserFactory.createUser(userData));
+      });
+
+      console.log(`✓ ${users.length} utilisateur(s) trouvé(s) avec le rôle ${role}`);
+      return users;
+    } catch (error) {
+      console.error(`Erreur lors de la récupération des utilisateurs avec le rôle ${role}:`, error);
+      throw new Error('Impossible de récupérer les utilisateurs par rôle');
+    }
+  }
+
+  /**
    * @description Met à jour le rôle d'un utilisateur
    * @param {string} userId - ID de l'utilisateur
    * @param {string} newRole - Nouveau rôle (Member, Librarian, Admin)

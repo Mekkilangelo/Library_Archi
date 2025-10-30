@@ -62,6 +62,11 @@
                     <span class="icon">📋</span>
                     <span>Mes Emprunts</span>
                 </button>
+                <button class="menu-item" data-tab="notifications">
+                    <span class="icon">🔔</span>
+                    <span>Notifications</span>
+                    <span class="badge" id="notificationsCount">0</span>
+                </button>
                 <button class="menu-item librarian-only" data-tab="active-loans">
                     <span class="icon">📚</span>
                     <span>Emprunts Actifs</span>
@@ -143,6 +148,23 @@
                     <button class="btn-refresh" onclick="loadPendingRequests()">🔄 Actualiser</button>
                 </div>
                 <div id="pendingList" class="requests-list">
+                    <div class="loader">Chargement...</div>
+                </div>
+            </section>
+
+            <!-- Notifications Tab -->
+            <section id="notifications" class="content-section">
+                <div class="section-header">
+                    <div>
+                        <h1>🔔 Notifications</h1>
+                        <p>Restez informé de vos emprunts</p>
+                    </div>
+                    <div>
+                        <button class="btn-secondary" onclick="markAllNotificationsAsRead()">✓ Tout marquer comme lu</button>
+                        <button class="btn-refresh" onclick="loadNotifications()">🔄 Actualiser</button>
+                    </div>
+                </div>
+                <div id="notificationsList" class="notifications-list">
                     <div class="loader">Chargement...</div>
                 </div>
             </section>
